@@ -64,5 +64,9 @@ jobs:
         COMMIT: "${{ github.sha }}"
         GH_TOKEN: "${{ github.token }}"
       run: |
+        if [ needs.get-version.outputs.is-prerelease ]
+        then
+        gh prerelease create --repo $REPO --target $COMMIT $VERSION artifact.zip
+        else
         gh release create --repo $REPO --target $COMMIT $VERSION artifact.zip
-        
+        fi
