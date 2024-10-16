@@ -25,7 +25,6 @@ jobs:
     steps:
       - name: Checkout
       - uses: actions/checkout@v4
-      - uses: actions/checkout@v2
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -36,7 +35,7 @@ jobs:
       - name: Build with Trunk
         env:
           VERSION: "${{ needs.get-version.outputs.version }}"
-        run: build --release
+        run: trunk build --release
       - uses: actions/upload-artifact@v4
         with:
           name: rust
