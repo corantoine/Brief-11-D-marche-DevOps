@@ -24,7 +24,7 @@ jobs:
       - get-version
     steps:
       - name: Checkout
-      - uses: actions/checkout@v4
+        uses: actions/checkout@v4
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:
