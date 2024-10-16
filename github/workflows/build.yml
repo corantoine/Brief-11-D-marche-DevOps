@@ -14,7 +14,7 @@ jobs:
     with:
       prerelease-branches: '^(beta)$'
       release-branches: '^(main)$'
-  
+      
   build:
     name: Rust build
     runs-on: ubuntu-latest
@@ -23,24 +23,24 @@ jobs:
     needs: 
       - get-version
     steps:
-      - name: setup rust
-        uses: actions/checkout@v2
-        uses: 
-        with:
-          distribution: 'temurin'
-          java-version: 17
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Build with Gradle
+        uses: actions/checkout@v2
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: stable
+            target: wasm32-unknown-unknown
+      - name: trunk
+        uses: jetli/trunk-action@v0.5.0
+      - name: Build with Trunk
         env:
           VERSION: "${{ needs.get-version.outputs.version }}"
-        run: ./gradlew bootjar
+        run: build --release
       - uses: actions/upload-artifact@v4
         with:
-          name: spring
-          path: build/libs/
+          name: rust
+          path: dist/*
 
           
 # Job de release
@@ -52,7 +52,7 @@ jobs:
     - name: Download artifacts
       uses: actions/download-artifact@v4.1.8
       with:
-        name: spring
+        name: rust
         path: dist/
     - name: Create Github Release
       env:
