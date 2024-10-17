@@ -1,70 +1,70 @@
-name: Build & Release
+name: Build & Release # Nom du workflow
 
 on:
   push:
     branches: 
-      - main
-      - beta 
+      - main # Déclenche le workflow sur les pushs vers la branche principale
+      - beta # Déclenche le workflow sur les pushs vers la branche beta
 
 permissions:
-  contents: write
+  contents: write # Donne la permission d'écrire dans le dépôt
 
 jobs:
   get-version:
     uses: shiipou/github-actions/.github/workflows/get-version.yml@main
     with:
-      prerelease-branches: '^(beta)$'
-      release-branches: '^(main)$'
+      prerelease-branches: '^(beta)$' # Spécifie les branches de pré-release
+      release-branches: '^(main)$' # Spécifie les branches de release
       
   build:
-    name: Rust build
-    runs-on: ubuntu-latest
+    name: Rust build # Nom du job de build
+    runs-on: ubuntu-latest # Utilise la dernière version d'Ubuntu pour exécuter le job
     #si get-version voit un commit qui permet une release (montée de version), il fait le build, sinon fait pas le build
     if: ${{ needs.get-version.outputs.will-release == 'true' }}
     needs: 
-      - get-version
+      - get-version # Ce job dépend du job get-version
     steps:
-      - name: Checkout
+      - name: Checkout # Étape pour récupérer le code source
         uses: actions/checkout@v4
-      - name: Setup Rust
+      - name: Setup Rust # Étape pour configurer l'environnement Rust
         uses: actions-rs/toolchain@v1
         with:
-            toolchain: stable
-            target: wasm32-unknown-unknown
-      - name: trunk
+            toolchain: stable # Utilise la version stable de Rust
+            target: wasm32-unknown-unknown # Spécifie la cible de compilation
+      - name: trunk # Étape pour utiliser Trunk
         uses: jetli/trunk-action@v0.5.0
-      - name: Build with Trunk
+      - name: Build with Trunk # Étape pour construire le projet avec Trunk
         env:
-          VERSION: "${{ needs.get-version.outputs.version }}"
-        run: trunk build --release
-      - uses: actions/upload-artifact@v4
+          VERSION: "${{ needs.get-version.outputs.version }}" # Utilise la version déterminée par get-version
+        run: trunk build --release # Commande pour construire le projet en mode release
+      - uses: actions/upload-artifact@v4  # Étape pour uploader les artefacts de build
         with:
-          name: rust
-          path: dist/*
+          name: rust # Nom de l'artefact
+          path: dist/* # Chemin des fichiers à uploader
 
           
 # Job de release
   release: 
-    name: Release
-    runs-on: ubuntu-latest
-    needs: [ get-version, build ]
+    name: Release # Nom du job de release
+    runs-on: ubuntu-latest  # Utilise la dernière version d'Ubuntu pour exécuter le job
+    needs: [ get-version, build ] # Ce job dépend des jobs get-version et build
     steps: 
-    - name: Download artifacts
+    - name: Download artifacts # Étape pour télécharger les artefacts de build
       uses: actions/download-artifact@v4.1.8
       with:
-        name: rust
-        path: dist/
-    - name: Zip files artifacts
+        name: rust # Nom de l'artefact à télécharger
+        path: dist/ # Chemin où les artefacts seront téléchargés
+    - name: Zip files artifacts  # Étape pour compresser les artefacts en un fichier zip
       run: zip -r artifacts.zip dist/*
-    - name: Create Github Release
+    - name: Create Github Release  # Étape pour créer une release sur GitHub
       env:
-        VERSION: "${{ needs.get-version.outputs.version }}"
+        VERSION: "${{ needs.get-version.outputs.version }}" # Utilise la version déterminée par get-version
         #github nous donne le repository dans lequel on est, = nomD'Utilisateur/NomDuRepo
         REPO: "${{ github.repository }}"
-        COMMIT: "${{ github.sha }}"
-        GH_TOKEN: "${{ github.token }}"
-        PRERELEASE: ${{ needs.get-version.outputs.is-prerelease }}
-        CHANGELOG: ${{ needs.get-version.outputs.changelogs }}
+        COMMIT: "${{ github.sha }}" # SHA du commit actuel
+        GH_TOKEN: "${{ github.token }}" # Jeton d'authentification GitHub
+        PRERELEASE: ${{ needs.get-version.outputs.is-prerelease }} # Indique si c'est une pré-release
+        CHANGELOG: ${{ needs.get-version.outputs.changelogs }} # Changelog généré par get-version
       run: |
         echo "$CHANGELOG" > changelog.md
         if [ "$PRERELEASE" == "true" ]; then
