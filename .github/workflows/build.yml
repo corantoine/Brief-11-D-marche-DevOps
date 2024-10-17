@@ -1,5 +1,5 @@
 name: Build & Release
- 
+
 on:
   push:
     branches: 
@@ -63,9 +63,12 @@ jobs:
         REPO: "${{ github.repository }}"
         COMMIT: "${{ github.sha }}"
         GH_TOKEN: "${{ github.token }}"
+        PRERELEASE: ${{ needs.get-version.outputs.is-prerelease }}
+        CHANGELOG: ${{ needs.get-version.outputs.changelogs }}
       run: |
-        if [ "${{ needs.get-version.outputs.is-prerelease }}" = "true" ]; then
-        gh prerelease create --repo $REPO --target $COMMIT $VERSION artifacts.zip
+        echo "$CHANGELOG" > changelog.md
+        if [ "$PRERELEASE" == "true" ]; then
+        gh release create --prerelease --repo $REPO --target $COMMIT -F changelog.md "v$VERSION" artifacts.zip
         else
-        gh release create --repo $REPO --target $COMMIT $VERSION artifacts.zip
+        gh release create --repo $REPO --target $COMMIT -F changelog.md "v$VERSION" artifacts.zip
         fi
