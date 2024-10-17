@@ -1,5 +1,6 @@
 name: Build & Release # Nom du workflow
 
+# Ici on déclenche l'évènement lors d'un push.
 on:
   push:
     branches: 
@@ -7,9 +8,10 @@ on:
       - beta # Déclenche le workflow sur les pushs vers la branche beta
 
 permissions:
-  contents: write # Donne la permission d'écrire dans le dépôt
+  contents: write # Donne la permission d'écrire dans le dépôt (le contenu peut être du code, des tags ou une release par exemple)
 
 jobs:
+# Ici on utilise un workflow externe pour obtenir la version actuelle basée sur les branches de release et prerelease
   get-version:
     uses: shiipou/github-actions/.github/workflows/get-version.yml@main
     with:
@@ -31,12 +33,15 @@ jobs:
         with:
             toolchain: stable # Utilise la version stable de Rust
             target: wasm32-unknown-unknown # Spécifie la cible de compilation
-      - name: trunk # Étape pour utiliser Trunk
+      # Installation de l'outil "trunk"
+      - name: trunk 
         uses: jetli/trunk-action@v0.5.0
       - name: Build with Trunk # Étape pour construire le projet avec Trunk
         env:
+          # Utilisation de la version générée par le get-version
           VERSION: "${{ needs.get-version.outputs.version }}" # Utilise la version déterminée par get-version
         run: trunk build --release # Commande pour construire le projet en mode release
+        
       - uses: actions/upload-artifact@v4  # Étape pour uploader les artefacts de build
         with:
           name: rust # Nom de l'artefact
